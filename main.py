@@ -74,7 +74,7 @@ async def cmd_start(message: Message):
     registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
     ])
-    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстая и для простых задач \nУ модели gemini-1.5-flash больше запросов",
+    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстая и для простых задач \nУ модели gemini-1.5-flash больше запросов \n \n Очищате истрию для создания нового диалога или при большом сообщении ",
                          reply_markup=registration_keyboard)
 
 
@@ -239,7 +239,15 @@ async def handle_message(message: Message):
             break
 
         except Exception as e:
-            print(e)
+            if str(e) == "Telegram server says - Bad Request: message is too long":
+                break
+                registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
+                    [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
+                ])
+                await message.answer(f"Error: {e} \n\nПопробуйте очистить историю или уменьшить сообщение", reply_markup=registration_keyboard)
+            else:
+                print(e)
             pass
 
 

@@ -94,7 +94,7 @@ async def handle_button_click(callback_query: types.CallbackQuery):
                 [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                 [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
             ])
-            await callback_query.message.answer(f"Model changed to {new_model}", reply_markup=registration_keyboard)
+            await callback_query.message.answer(f"Модель изменена на  {new_model}", reply_markup=registration_keyboard)
 
 
 def delete_folder(folder_path):
@@ -165,7 +165,7 @@ async def handle_message(message: Message):
                     os.makedirs(media_dir)
                 file_name = f'{media_dir}/{document.file_name}'
                 await bot.download_file(file_path, file_name)
-                if message.document.mime_type == "application/pdf":
+                if not message.document.mime_type == "application/pdf":
                     upload_file_s = genai.upload_file(file_name)
                     conversation_history.append({"role": "user", "parts": [{"text": text}]})
                     registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -190,6 +190,7 @@ async def handle_message(message: Message):
                     ])
                     await message.answer("Пожалуйста, введите подпись к изображению",
                                          reply_markup=registration_keyboard)
+                    break
                 else:
                     text = caption
                     response = model.generate_content([text, image])

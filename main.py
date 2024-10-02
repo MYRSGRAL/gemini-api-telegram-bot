@@ -13,7 +13,6 @@ from aiogram.types import Message, callback_query
 
 from config import API_TOKEN, GOOGLE_API_KEY_list
 
-logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
@@ -106,7 +105,7 @@ def delete_folder(folder_path):
                 os.rmdir(os.path.join(root, name))
         os.rmdir(folder_path)
     except Exception as e:
-        print(f"Error: {e}")
+        pass
 
 
 @dp.message(Command("clear"))
@@ -136,10 +135,25 @@ async def handle_message(message: Message):
 
             if message.content_type == ContentType.TEXT:
                 text = message.text
+                if len(text) > 4000:
+                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
+                        [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
+                    ])
+                    await message.answer("Максимальная длина сообщения 4000 символов", reply_markup=registration_keyboard)
+                    break
                 conversation_history.append({"role": "user", "parts": [{"text": text}]})
             elif message.content_type == ContentType.PHOTO:
                 caption = message.caption
                 text = caption
+                if len(text) > 1000:
+                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
+                        [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
+                    ])
+                    await message.answer("Максимальная длина подписи фото 1000 символов",
+                                         reply_markup=registration_keyboard)
+                    break
                 photo = message.photo[-1]
                 file_info = await bot.get_file(photo.file_id)
                 file_path = file_info.file_path
@@ -156,6 +170,14 @@ async def handle_message(message: Message):
             elif message.content_type == ContentType.DOCUMENT:
                 caption = message.caption
                 text = caption
+                if len(text) > 1000:
+                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
+                        [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
+                    ])
+                    await message.answer("Максимальная длина подписи файла 1000 символов",
+                                         reply_markup=registration_keyboard)
+                    break
                 document = message.document
                 file_info = await bot.get_file(document.file_id)
                 file_path = file_info.file_path

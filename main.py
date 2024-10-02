@@ -75,7 +75,7 @@ async def cmd_start(message: Message):
     registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
     ])
-    await message.answer("Салам\n Дадада это тот самый бот вашего всемогущего господина",
+    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстая и для простых задач \nУ модели gemini-1.5-flash больше запросов",
                          reply_markup=registration_keyboard)
 
 

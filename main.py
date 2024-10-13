@@ -71,12 +71,12 @@ def save_conversation_history(history, history_json):
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")],
     ])
     await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстая и для простых задач \nУ модели gemini-1.5-flash больше запросов \n \n Очищате истрию для создания нового диалога или при большом сообщении ",
-                         reply_markup=registration_keyboard)
+                         reply_markup=main_keyboard)
 
 
 @dp.callback_query(
@@ -90,11 +90,11 @@ async def handle_button_click(callback_query: types.CallbackQuery):
             current_model = get_user_model(user_id)
             new_model = 'gemini-1.5-pro' if current_model == 'gemini-1.5-flash' else 'gemini-1.5-flash'
             set_user_model(user_id, new_model)
-            registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                 [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
             ])
-            await callback_query.message.answer(f"Модель изменена на  {new_model}", reply_markup=registration_keyboard)
+            await callback_query.message.answer(f"Модель изменена на  {new_model}", reply_markup=main_keyboard)
 
 
 def delete_folder(folder_path):
@@ -121,7 +121,7 @@ async def Clear_history(message: types.Message):
     with open(history_json, 'w') as file:
         file.truncate(0)
     delete_folder(media_dir)
-    await message.answer("Истроия очищена")
+    await message.answer("История очищена")
 
 
 @dp.message()
@@ -137,23 +137,23 @@ async def handle_message(message: Message):
             if message.content_type == ContentType.TEXT:
                 text = message.text
                 if len(text) > 4000:
-                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
                     ])
-                    await message.answer("Максимальная длина сообщения 4000 символов", reply_markup=registration_keyboard)
+                    await message.answer("Максимальная длина сообщения 4000 символов", reply_markup=main_keyboard)
                     break
                 conversation_history.append({"role": "user", "parts": [{"text": text}]})
             elif message.content_type == ContentType.PHOTO:
                 caption = message.caption
                 text = caption
                 if len(text) > 1000:
-                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
                     ])
                     await message.answer("Максимальная длина подписи фото 1000 символов",
-                                         reply_markup=registration_keyboard)
+                                         reply_markup=main_keyboard)
                     break
                 photo = message.photo[-1]
                 file_info = await bot.get_file(photo.file_id)
@@ -172,12 +172,12 @@ async def handle_message(message: Message):
                 caption = message.caption
                 text = caption
                 if len(text) > 1000:
-                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
                     ])
                     await message.answer("Максимальная длина подписи файла 1000 символов",
-                                         reply_markup=registration_keyboard)
+                                         reply_markup=main_keyboard)
                     break
                 document = message.document
                 file_info = await bot.get_file(document.file_id)
@@ -191,11 +191,11 @@ async def handle_message(message: Message):
                 if not message.document.mime_type == "application/pdf":
                     upload_file_s = genai.upload_file(file_name)
                     conversation_history.append({"role": "user", "parts": [{"text": text}]})
-                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
                     ])
-                    await message.answer("Поддерживается только pdf", reply_markup=registration_keyboard)
+                    await message.answer("Поддерживается только pdf", reply_markup=main_keyboard)
                     break
 
             user_id = message.from_user.id
@@ -207,24 +207,24 @@ async def handle_message(message: Message):
                 response = chat_session.send_message(text)
             elif message.content_type == ContentType.PHOTO:
                 if caption is None:
-                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
                     ])
                     await message.answer("Пожалуйста, введите подпись к изображению",
-                                         reply_markup=registration_keyboard)
+                                         reply_markup=main_keyboard)
                     break
                 else:
                     text = caption
                     response = model.generate_content([text, image])
             elif message.content_type == ContentType.DOCUMENT:
                 if caption is None:
-                    registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
                     ])
                     await message.answer("Пожалуйста, введите подпись к изображению",
-                                         reply_markup=registration_keyboard)
+                                         reply_markup=main_keyboard)
                 else:
                     text = caption
                     response = model.generate_content([text, upload_file_s])
@@ -232,21 +232,22 @@ async def handle_message(message: Message):
             conversation_history.append({"role": "model", "parts": [{"text": response.text}]})
             save_conversation_history(conversation_history, history_json)
 
-            registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                 [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
             ])
-            await message.answer(response.text, reply_markup=registration_keyboard)
+
+            await message.answer(response.text, reply_markup=main_keyboard)
             break
 
         except Exception as e:
             if str(e) == "Telegram server says - Bad Request: message is too long":
                 break
-                registration_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                     [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
                 ])
-                await message.answer(f"Error: {e} \n\nПопробуйте очистить историю или уменьшить сообщение", reply_markup=registration_keyboard)
+                await message.answer(f"Error: {e} \n\nПопробуйте очистить историю или уменьшить сообщение", reply_markup=main_keyboard)
             else:
                 print(e)
             pass

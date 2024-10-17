@@ -24,11 +24,14 @@ DEFAULT_MODEL = 'gemini-1.5-flash'
 
 
 def load_settings():
+    if not os.path.exists('settings.json'):
+        with open('settings.json', 'w') as file:
+            json.dump({}, file, ensure_ascii=False, indent=4)
     try:
         with open('settings.json', 'r') as file:
             return json.load(file)
-    except FileNotFoundError:
-        return {}
+    except Exception as e:
+        print(e)
 
 
 def save_settings(settings):

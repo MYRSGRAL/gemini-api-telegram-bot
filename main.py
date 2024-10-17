@@ -242,7 +242,6 @@ async def handle_message(message: Message):
 
         except Exception as e:
             if str(e) == "Telegram server says - Bad Request: message is too long":
-                break
                 main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                     [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
@@ -250,7 +249,6 @@ async def handle_message(message: Message):
                 await message.answer(f"Error: {e} \n\nПопробуйте очистить историю или уменьшить сообщение", reply_markup=main_keyboard)
             else:
                 print(e)
-            pass
 
 
 async def main():

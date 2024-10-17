@@ -11,8 +11,8 @@ from aiogram.types import ContentType
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import Message, callback_query
 
-from config import API_TOKEN, GOOGLE_API_KEY_list
-
+from config import (API_TOKEN, GOOGLE_API_KEY_list, DEFAULT_MODEL)
+from Handlers import (load_settings, save_settings, get_user_model, set_user_model, load_conversation_history, save_conversation_history, delete_folder)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
@@ -20,57 +20,7 @@ dp = Dispatcher()
 if not os.path.exists('media'):
     os.makedirs('media')
 
-DEFAULT_MODEL = 'gemini-1.5-flash'
-
-
-def load_settings():
-    if not os.path.exists('settings.json'):
-        with open('settings.json', 'w') as file:
-            json.dump({}, file, ensure_ascii=False, indent=4)
-    try:
-        with open('settings.json', 'r') as file:
-            return json.load(file)
-    except Exception as e:
-        print(e)
-
-
-def save_settings(settings):
-    with open('settings.json', 'w') as file:
-        json.dump(settings, file, ensure_ascii=False, indent=4)
-
-
 settings = load_settings()
-
-
-def get_user_model(user_id):
-    return settings.get(str(user_id), DEFAULT_MODEL)
-
-
-def set_user_model(user_id, model):
-    settings[str(user_id)] = model
-    save_settings(settings)
-
-
-history_json = None
-
-
-def load_conversation_history(history_json):
-    try:
-        if os.path.getsize(history_json) == 0:
-            return []
-        with open(history_json, 'r') as file:
-            history = json.load(file)
-            if not isinstance(history, list):
-                history = []
-            return history
-    except FileNotFoundError:
-        return []
-
-
-def save_conversation_history(history, history_json):
-    with open(history_json, 'w') as file:
-        json.dump(history, file, ensure_ascii=False, indent=4)
-
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
@@ -90,26 +40,14 @@ async def handle_button_click(callback_query: types.CallbackQuery):
             await Clear_history(callback_query.message)
         case "Change_model":
             user_id = callback_query.from_user.id
-            current_model = get_user_model(user_id)
+            current_model = get_user_model(settings, user_id)
             new_model = 'gemini-1.5-pro' if current_model == 'gemini-1.5-flash' else 'gemini-1.5-flash'
-            set_user_model(user_id, new_model)
+            set_user_model(settings, user_id, new_model, )
             main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                 [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
             ])
             await callback_query.message.answer(f"Модель изменена на  {new_model}", reply_markup=main_keyboard)
-
-
-def delete_folder(folder_path):
-    try:
-        for root, dirs, files in os.walk(folder_path, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        os.rmdir(folder_path)
-    except Exception as e:
-        pass
 
 
 @dp.message(Command("clear"))
@@ -148,8 +86,15 @@ async def handle_message(message: Message):
                     break
                 conversation_history.append({"role": "user", "parts": [{"text": text}]})
             elif message.content_type == ContentType.PHOTO:
-                caption = message.caption
-                text = caption
+                text = message.caption
+                if text is None:
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
+                        [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
+                    ])
+                    await message.answer("Пожалуйста, введите подпись к изображению",
+                                         reply_markup=main_keyboard)
+                    break
                 if len(text) > 1000:
                     main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
@@ -172,8 +117,14 @@ async def handle_message(message: Message):
                     raise ValueError("Failed to open image")
                 conversation_history.append({"role": "user", "parts": [{"text": text}]})
             elif message.content_type == ContentType.DOCUMENT:
-                caption = message.caption
-                text = caption
+                text = message.caption
+                if text is None:
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
+                        [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
+                    ])
+                    await message.answer("Пожалуйста, введите подпись к документу",
+                                         reply_markup=main_keyboard)
                 if len(text) > 1000:
                     main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
@@ -202,35 +153,17 @@ async def handle_message(message: Message):
                     break
 
             user_id = message.from_user.id
-            model_name = get_user_model(user_id)
+            model_name = get_user_model(settings, user_id)
+            print(model_name)
             model = genai.GenerativeModel(model_name)
 
             if message.content_type == ContentType.TEXT:
                 chat_session = model.start_chat(history=conversation_history)
                 response = chat_session.send_message(text)
             elif message.content_type == ContentType.PHOTO:
-                if caption is None:
-                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                        [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
-                        [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
-                    ])
-                    await message.answer("Пожалуйста, введите подпись к изображению",
-                                         reply_markup=main_keyboard)
-                    break
-                else:
-                    text = caption
-                    response = model.generate_content([text, image])
+                response = model.generate_content([text, image])
             elif message.content_type == ContentType.DOCUMENT:
-                if caption is None:
-                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                        [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
-                        [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
-                    ])
-                    await message.answer("Пожалуйста, введите подпись к изображению",
-                                         reply_markup=main_keyboard)
-                else:
-                    text = caption
-                    response = model.generate_content([text, upload_file_s])
+                response = model.generate_content([text, upload_file_s])
 
             conversation_history.append({"role": "model", "parts": [{"text": response.text}]})
             save_conversation_history(conversation_history, history_json)

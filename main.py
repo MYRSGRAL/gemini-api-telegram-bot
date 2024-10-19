@@ -10,11 +10,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import ContentType
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import Message, callback_query
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 
 from config import (API_TOKEN, GOOGLE_API_KEY_list, DEFAULT_MODEL)
-from Handlers import (load_settings, save_settings, get_user_model, set_user_model, load_conversation_history, save_conversation_history, delete_folder)
+from Handlers import (load_settings, save_settings, get_user_model, set_user_model, load_conversation_history, save_conversation_history, delete_folder, format_text)
 
 bot = Bot(token=API_TOKEN)
+default = DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
 dp = Dispatcher()
 
 if not os.path.exists('media'):
@@ -28,7 +31,7 @@ async def cmd_start(message: Message):
         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")],
     ])
-    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстая и для простых задач \nУ модели gemini-1.5-flash больше запросов \n \n Очищате истрию для создания нового диалога или при большом сообщении ",
+    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\n\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстая и для простых задач \n\nУ модели gemini-1.5-flash больше запросов \n \n Очищате истрию для создания нового диалога или при большом сообщении ",
                          reply_markup=main_keyboard)
 
 
@@ -172,8 +175,7 @@ async def handle_message(message: Message):
                 [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
                 [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")]
             ])
-
-            await message.answer(response.text, reply_markup=main_keyboard)
+            await message.answer(response.text, reply_markup=main_keyboard, parse_mode=ParseMode.MARKDOWN)
             break
 
         except Exception as e:

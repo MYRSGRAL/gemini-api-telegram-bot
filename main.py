@@ -1,20 +1,17 @@
 import asyncio
-import json
-import logging
 import os
 import PIL.Image
 import google.generativeai as genai
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
 from aiogram.types import ContentType
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import Message, callback_query
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from config import (API_TOKEN, GOOGLE_API_KEY_list, DEFAULT_MODEL)
-from Handlers import (load_settings, save_settings, get_user_model, set_user_model, load_conversation_history, save_conversation_history, delete_folder, format_text)
+from config import (API_TOKEN, GOOGLE_API_KEY_list)
+from Handlers import (load_settings, get_user_model, set_user_model, load_conversation_history, save_conversation_history, delete_folder)
 
 bot = Bot(token=API_TOKEN)
 default = DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
@@ -31,7 +28,7 @@ async def cmd_start(message: Message):
         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],
         [InlineKeyboardButton(text="Сменить модель", callback_data="Change_model")],
     ])
-    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\n\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстая и для простых задач \n\nУ модели gemini-1.5-flash больше запросов \n \n Очищате истрию для создания нового диалога или при большом сообщении ",
+    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\n\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстрая и для простых задач \n\nУ модели gemini-1.5-flash больше запросов \n \n Очищайте историю для создания нового диалога или при большом сообщении ",
                          reply_markup=main_keyboard)
 
 
@@ -40,7 +37,7 @@ async def cmd_start(message: Message):
 async def handle_button_click(callback_query: types.CallbackQuery):
     match callback_query.data:
         case "Del_history":
-            await Clear_history(callback_query.message)
+            await clear_history(callback_query.message)
         case "Change_model":
             user_id = callback_query.from_user.id
             current_model = get_user_model(settings, user_id)
@@ -54,7 +51,7 @@ async def handle_button_click(callback_query: types.CallbackQuery):
 
 
 @dp.message(Command("clear"))
-async def Clear_history(message: types.Message):
+async def clear_history(message: types.Message):
     if message.chat.id is None:
         history_json = f'{callback_query.from_user.id}.json'
         media_dir = f'media/{callback_query.from_user.id}'
@@ -157,7 +154,6 @@ async def handle_message(message: Message):
 
             user_id = message.from_user.id
             model_name = get_user_model(settings, user_id)
-            print(model_name)
             model = genai.GenerativeModel(model_name)
 
             if message.content_type == ContentType.TEXT:

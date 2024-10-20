@@ -125,6 +125,7 @@ async def handle_message(message: Message):
                     ])
                     await message.answer("Пожалуйста, введите подпись к документу",
                                          reply_markup=main_keyboard)
+                    break
                 if len(text) > 1000:
                     main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="Очистить историю", callback_data="Del_history")],

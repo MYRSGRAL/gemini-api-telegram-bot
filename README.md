@@ -17,8 +17,8 @@
 
 1. **Клонируйте репозиторий:** `git clone https://github.com/MYRSGRAL/gemini-api-telegram-bot`
 2. **Установите зависимости:** `pip install -r requirements.txt`
-3. **Получите API ключ для Google Gemini:**  [https://ai.google.dev/gemini-api/docs/api-key?hl=ru]
-4. **Создайте бота в Telegram:**  [https://t.me/BotHelp_Fatherbot]
+3. **Получите API ключ для Google Gemini:**  [Инструкция по получению API ключа](https://ai.google.dev/gemini-api/docs/api-key?hl=ru)
+4. **Создайте бота в Telegram:**  [Инструкция по созданию бота](https://t.me/BotHelp_Fatherbot)
 5. **Настройте бота:**
     *  В файле `config.py` укажите свой API ключ для Google Gemini.
     *  Укажите токен вашего Telegram бота.

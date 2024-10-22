@@ -13,7 +13,8 @@ from aiogram.utils.chat_action import ChatActionSender
 from aiogram.enums import ChatAction
 
 from config import (API_TOKEN, GOOGLE_API_KEY_list)
-from Handlers import (load_settings, get_user_model, set_user_model, load_conversation_history, save_conversation_history, delete_folder)
+from Handlers import (load_settings, get_user_model, set_user_model, load_conversation_history,
+                      save_conversation_history, delete_folder)
 
 bot = Bot(token=API_TOKEN)
 default = DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
@@ -34,32 +35,55 @@ generation_config = {
 
 settings = load_settings()
 
+
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
     main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
         [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
     ])
-    await message.answer("Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\n\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстрая и для простых задач \n\nУ модели gemini-1.5-flash больше запросов \n \n Очищайте историю для создания нового диалога или при большом сообщении ",
-                         reply_markup=main_keyboard)
+    await message.answer(
+        "Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\n\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстрая и для простых задач \n\nУ модели gemini-1.5-flash больше запросов \n \n Очищайте историю для создания нового диалога или при большом сообщении ",
+        reply_markup=main_keyboard)
 
 
-@dp.callback_query(
-    lambda c: c.data in ["Del_history", "Change_model"])
+@dp.callback_query(lambda c: c.data in ["Del_history", "Change_model", "Gemini-1.5-flash", "Gemini-1.5-pro"])
 async def handle_button_click(callback_query: types.CallbackQuery):
+    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
+        [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
+    ])
     match callback_query.data:
         case "Del_history":
             await clear_history(callback_query.message)
         case "Change_model":
-            user_id = callback_query.from_user.id
-            current_model = get_user_model(settings, user_id)
-            new_model = 'gemini-1.5-pro' if current_model == 'gemini-1.5-flash' else 'gemini-1.5-flash'
-            set_user_model(settings, user_id, new_model, )
-            main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
-                [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
-            ])
-            await callback_query.message.answer(f"Модель изменена на  {new_model}", reply_markup=main_keyboard)
+            await change_model(callback_query.message)
+        case "Gemini-1.5-flash":
+            await set_user_model(settings, callback_query.from_user.id, "gemini-1.5-flash")
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id,
+                                        text="Gemini-1.5-flash ♊", reply_markup=main_keyboard)
+        case "Gemini-1.5-pro":
+            await set_user_model(settings, callback_query.from_user.id, "gemini-1.5-pro")
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id,
+                                        text="Gemini-1.5-pro ♊", reply_markup=main_keyboard)
+
+
+@dp.message(Command("Change_model"))
+async def change_model(message: Message):
+    user_id = message.chat.id if message.chat.id is not None else message.from_user.id
+    current_model = get_user_model(settings, user_id)
+    if current_model == 'gemini-1.5-flash':
+        main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="♊ Gemini-1.5-flash ✅", callback_data="Gemini-1.5-flash")],
+            [InlineKeyboardButton(text="♊ Gemini-1.5-pro", callback_data="Gemini-1.5-pro")]
+        ])
+    elif current_model == 'gemini-1.5-pro':
+        main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="♊ Gemini-1.5-pro ✅ ", callback_data="Gemini-1.5-pro")],
+            [InlineKeyboardButton(text="♊ Gemini-1.5-flash", callback_data="Gemini-1.5-flash")]
+        ])
+    await message.answer("Выберете модель ⚙️", reply_markup=main_keyboard)
+
 
 
 @dp.message(Command("clear"))
@@ -74,7 +98,7 @@ async def clear_history(message: types.Message):
     with open(history_json, 'w') as file:
         file.truncate(0)
     delete_folder(media_dir)
-    await message.answer("История очищена")
+    await message.answer("🧹 История очищена")
 
 
 @dp.message()
@@ -98,7 +122,8 @@ async def handle_message(message: Message):
                                 [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
                                 [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
                             ])
-                            await message.answer("Максимальная длина сообщения 4000 символов", reply_markup=main_keyboard)
+                            await message.answer("Максимальная длина сообщения 4000 символов",
+                                                 reply_markup=main_keyboard)
                             break
                         conversation_history.append({"role": "user", "parts": [{"text": text}]})
                     elif message.content_type == ContentType.PHOTO:
@@ -192,7 +217,8 @@ async def handle_message(message: Message):
                         [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
                     ])
                     await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
-                                                text=response.text, reply_markup=main_keyboard, parse_mode=ParseMode.MARKDOWN)
+                                                text=response.text, reply_markup=main_keyboard,
+                                                parse_mode=ParseMode.MARKDOWN)
                     break
                 except Exception as e:
                     print(e)
@@ -204,6 +230,7 @@ async def handle_message(message: Message):
             ])
             await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
                                         text="Error: Произошла ошибка", reply_markup=main_keyboard)
+
 
 async def main():
     await dp.start_polling(bot)

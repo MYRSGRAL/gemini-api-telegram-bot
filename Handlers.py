@@ -1,6 +1,7 @@
 import json
 import os
 from config import DEFAULT_MODEL
+import asyncio
 
 def load_settings():
     if not os.path.exists('settings.json'):
@@ -20,9 +21,11 @@ def save_settings(settings):
 def get_user_model(settings, user_id):
     return settings.get(str(user_id), DEFAULT_MODEL)
 
-def set_user_model(settings, user_id, model):
-    settings[str(user_id)] = model
+async def set_user_model(settings, user_id, model_name):
+    settings[str(user_id)] = model_name
     save_settings(settings)
+    await asyncio.sleep(0.1)
+    return True
 
 def load_conversation_history(history_json):
     try:

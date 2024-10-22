@@ -43,7 +43,7 @@ async def cmd_start(message: Message):
         [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
     ])
     await message.answer(
-        "Салам \nДадада это тот самый бот вашего всемогущего господина \n \nУ бота есть две модели gemini-1.5-pro и gemini-1.5-flash\n\ngemini-1.5-pro для более сложных задач \ngemini-1.5-flash более быстрая и для простых задач \n\nУ модели gemini-1.5-flash больше запросов \n \n Очищайте историю для создания нового диалога или при большом сообщении ",
+        "👋 Добро пожаловать! ✨\n\n🤖 Я — большая языковая модель, и у меня есть две версии: gemini-1.5-pro и gemini-1.5-flash.\n\n🧠 gemini-1.5-pro — для решения сложных задач, требующих глубокого анализа. 🤯\n⚡ gemini-1.5-flash — быстрая и эффективная версия для простых вопросов. 💨\n\n☝️  gemini-1.5-flash имеет больший лимит запросов. 😉\n\n🧹 Не забывайте очищать историю для начала нового диалога или при отправке большого сообщения. \n\n✨ Готов ответить на ваши вопросы! ✨",
         reply_markup=main_keyboard)
 
 
@@ -60,12 +60,14 @@ async def handle_button_click(callback_query: types.CallbackQuery):
             await change_model(callback_query.message)
         case "Gemini-1.5-flash":
             await set_user_model(settings, callback_query.from_user.id, "gemini-1.5-flash")
-            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id,
-                                        text="Gemini-1.5-flash ♊", reply_markup=main_keyboard)
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id,
+                                        message_id=callback_query.message.message_id,
+                                        text="⚡ Gemini-1.5-flash", reply_markup=main_keyboard)
         case "Gemini-1.5-pro":
             await set_user_model(settings, callback_query.from_user.id, "gemini-1.5-pro")
-            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=callback_query.message.message_id,
-                                        text="Gemini-1.5-pro ♊", reply_markup=main_keyboard)
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id,
+                                        message_id=callback_query.message.message_id,
+                                        text="🧠 Gemini-1.5-pro", reply_markup=main_keyboard)
 
 
 @dp.message(Command("Change_model"))
@@ -74,16 +76,15 @@ async def change_model(message: Message):
     current_model = get_user_model(settings, user_id)
     if current_model == 'gemini-1.5-flash':
         main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="♊ Gemini-1.5-flash ✅", callback_data="Gemini-1.5-flash")],
-            [InlineKeyboardButton(text="♊ Gemini-1.5-pro", callback_data="Gemini-1.5-pro")]
+            [InlineKeyboardButton(text="⚡  Gemini-1.5-flash ✅", callback_data="Gemini-1.5-flash")],
+            [InlineKeyboardButton(text="🧠 Gemini-1.5-pro", callback_data="Gemini-1.5-pro")]
         ])
     elif current_model == 'gemini-1.5-pro':
         main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="♊ Gemini-1.5-pro ✅ ", callback_data="Gemini-1.5-pro")],
-            [InlineKeyboardButton(text="♊ Gemini-1.5-flash", callback_data="Gemini-1.5-flash")]
+            [InlineKeyboardButton(text="🧠 Gemini-1.5-pro ✅ ", callback_data="Gemini-1.5-pro")],
+            [InlineKeyboardButton(text="⚡  Gemini-1.5-flash", callback_data="Gemini-1.5-flash")]
         ])
     await message.answer("Выберете модель ⚙️", reply_markup=main_keyboard)
-
 
 
 @dp.message(Command("clear"))

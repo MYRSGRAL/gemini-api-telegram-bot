@@ -1,0 +1,6 @@
+FROM python:3.10-alpine
+WORKDIR /gemini_bot
+COPY . .
+ENV DOCKER=True
+RUN pip install --no-cache-dir -r requirements.txt
+CMD ["python", "main.py"]

@@ -117,15 +117,6 @@ async def handle_message(message: Message):
         await asyncio.sleep(0.01)
         try:
             for GOOGLE_API in GOOGLE_API_KEY_list:
-                if stop_generation:
-                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                        [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
-                        [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
-                    ])
-                    await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
-                                                text="⚠️ Генерация остановлена", reply_markup=main_keyboard)
-                    stop_generation = False
-                    break
                 try:
                     genai.configure(api_key=GOOGLE_API)
                     history_json = f'{message.chat.id}.json'
@@ -219,25 +210,25 @@ async def handle_message(message: Message):
                         model_name=model_name,
                         generation_config=generation_config
                     )
+                    if not stop_generation:
+                        if message.content_type == ContentType.TEXT:
+                            chat_session = model.start_chat(history=conversation_history)
+                            response = chat_session.send_message(text)
+                        elif message.content_type == ContentType.PHOTO:
+                            response = model.generate_content([text, image])
+                        elif message.content_type == ContentType.DOCUMENT:
+                            response = model.generate_content([text, upload_file_s])
 
-                    if message.content_type == ContentType.TEXT:
-                        chat_session = model.start_chat(history=conversation_history)
-                        response = chat_session.send_message(text)
-                    elif message.content_type == ContentType.PHOTO:
-                        response = model.generate_content([text, image])
-                    elif message.content_type == ContentType.DOCUMENT:
-                        response = model.generate_content([text, upload_file_s])
-
-                    conversation_history.append({"role": "model", "parts": [{"text": response.text}]})
-                    save_conversation_history(conversation_history, history_json)
-
-                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                        [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
-                        [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
-                    ])
-                    await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
-                                                text=response.text, reply_markup=main_keyboard,
-                                                parse_mode=ParseMode.MARKDOWN)
+                        conversation_history.append({"role": "model", "parts": [{"text": response.text}]})
+                        save_conversation_history(conversation_history, history_json)
+                    if not stop_generation:
+                        main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                            [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
+                            [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
+                        ])
+                        await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                    text=response.text, reply_markup=main_keyboard,
+                                                    parse_mode=ParseMode.MARKDOWN)
                     break
                 except Exception as e:
                     print(e)

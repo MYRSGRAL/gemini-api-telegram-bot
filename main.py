@@ -117,6 +117,15 @@ async def handle_message(message: Message):
         await asyncio.sleep(0.01)
         try:
             for GOOGLE_API in GOOGLE_API_KEY_list:
+                if stop_generation:
+                    main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
+                        [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
+                    ])
+                    await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                text="⚠️ Генерация остановлена", reply_markup=main_keyboard)
+                    stop_generation = False
+                    break
                 try:
                     genai.configure(api_key=GOOGLE_API)
                     history_json = f'{message.chat.id}.json'

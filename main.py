@@ -123,8 +123,8 @@ async def handle_message(message: Message):
                                 [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
                                 [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
                             ])
-                            await message.answer("Максимальная длина сообщения 4000 символов",
-                                                 reply_markup=main_keyboard)
+                            await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                        text="Error: Максимальная длина сообщения 4000 символов", reply_markup=main_keyboard)
                             break
                         conversation_history.append({"role": "user", "parts": [{"text": text}]})
                     elif message.content_type == ContentType.PHOTO:
@@ -134,16 +134,16 @@ async def handle_message(message: Message):
                                 [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
                                 [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
                             ])
-                            await message.answer("Пожалуйста, введите подпись к изображению",
-                                                 reply_markup=main_keyboard)
+                            await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                        text="Error: Введите подпись к изображению", reply_markup=main_keyboard)
                             break
                         if len(text) > 1000:
                             main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                                 [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
                                 [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
                             ])
-                            await message.answer("Максимальная длина подписи фото 1000 символов",
-                                                 reply_markup=main_keyboard)
+                            await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                        text="Error: Максимальная длина подписи фото 1000 символов", reply_markup=main_keyboard)
                             break
                         photo = message.photo[-1]
                         file_info = await bot.get_file(photo.file_id)
@@ -165,16 +165,24 @@ async def handle_message(message: Message):
                                 [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
                                 [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
                             ])
-                            await message.answer("Пожалуйста, введите подпись к документу",
-                                                 reply_markup=main_keyboard)
+                            await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                        text="Error: Введите подпись к документу", reply_markup=main_keyboard)
                             break
                         if len(text) > 1000:
                             main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
                                 [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
                                 [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
                             ])
-                            await message.answer("Максимальная длина подписи файла 1000 символов",
-                                                 reply_markup=main_keyboard)
+                            await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                        text="Error: Максимальная длина подписи файла 1000 символов", reply_markup=main_keyboard)
+                            break
+                        if not message.document.mime_type == "application/pdf":
+                            main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                                [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
+                                [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
+                            ])
+                            await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
+                                                        text="Error: Поддерживается только pdf", reply_markup=main_keyboard)
                             break
                         document = message.document
                         file_info = await bot.get_file(document.file_id)
@@ -185,15 +193,8 @@ async def handle_message(message: Message):
                             os.makedirs(media_dir)
                         file_name = f'{media_dir}/{document.file_name}'
                         await bot.download_file(file_path, file_name)
-                        if not message.document.mime_type == "application/pdf":
-                            upload_file_s = genai.upload_file(file_name)
-                            conversation_history.append({"role": "user", "parts": [{"text": text}]})
-                            main_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                                [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
-                                [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")]
-                            ])
-                            await message.answer("Поддерживается только pdf", reply_markup=main_keyboard)
-                            break
+                        upload_file_s = genai.upload_file(file_name)
+                        conversation_history.append({"role": "user", "parts": [{"text": text}]})
 
                     user_id = message.from_user.id
                     model_name = get_user_model(settings, user_id)

@@ -161,7 +161,6 @@ async def handle_message(message: Message):
         await asyncio.sleep(0.01)
         message_keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
-            [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
             [InlineKeyboardButton(text="💻 Настройки", callback_data="Settings_menu")],
             [InlineKeyboardButton(text="⏩ На главную", callback_data="start_menu")]
         ])
@@ -261,7 +260,7 @@ async def handle_message(message: Message):
                         await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
                                                     text=response.text, reply_markup=message_keyboard,
                                                     parse_mode=ParseMode.MARKDOWN)
-                    if set_user_send_model_name(user_id):
+                    if await set_user_send_model_name(user_id):
                         await message.answer(f"{model_name} сгенерировала ответ")
                     break
                 except Exception as e:

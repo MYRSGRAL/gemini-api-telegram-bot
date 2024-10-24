@@ -1,31 +1,65 @@
 import json
 import os
-from config import DEFAULT_MODEL
-import asyncio
+import sqlite3
 
-def load_settings():
-    if not os.path.exists('settings.json'):
-        with open('settings.json', 'w') as file:
-            json.dump({}, file, ensure_ascii=False, indent=4)  # Initialize as an empty dictionary
-    try:
-        with open('settings.json', 'r') as file:
-            return json.load(file)
-    except Exception as e:
-        print(e)
-        return {}
+from config import DEFAULT_MODEL, Default_send_model_name
 
-def save_settings(settings):
-    with open('settings.json', 'w') as file:
-        json.dump(settings, file, ensure_ascii=False, indent=4)
+conn = sqlite3.connect('usr_settings.db', check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER,
+        model TEXT,
+        send_model_name INTEGER
+    )
+''')
+conn.commit()
 
-def get_user_model(settings, user_id):
-    return settings.get(str(user_id), DEFAULT_MODEL)
 
-async def set_user_model(settings, user_id, model_name):
-    settings[str(user_id)] = model_name
-    save_settings(settings)
-    await asyncio.sleep(0.1)
+def check_user_account(user_id):
+    cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+    existing_user = cursor.fetchone()
+    send_model_name = 1 if Default_send_model_name is True else 0
+    if not existing_user:
+        cursor.execute("INSERT INTO users (send_model_name, model, user_id) VALUES (?, ?, ?)",
+                       (send_model_name, DEFAULT_MODEL, user_id))
+        conn.commit()
     return True
+
+
+def get_user_model(user_id):
+    check_user_account(user_id)
+    cursor.execute("SELECT model FROM users WHERE user_id = ?", (user_id,))
+    model_name = cursor.fetchone()
+    if not model_name:
+        return DEFAULT_MODEL
+    else:
+        return model_name[0]
+
+
+def get_user_send_model_name(user_id):
+    check_user_account(user_id)
+    cursor.execute("SELECT send_model_name FROM users WHERE user_id = ?", (user_id,))
+    send_model_name = cursor.fetchone()
+    send_model_name = True if send_model_name[0] == 1 else False
+    return send_model_name
+
+
+async def set_user_model(user_id, model_name):
+    check_user_account(user_id)
+    cursor.execute("UPDATE users SET model = ? WHERE user_id = ?", (model_name, user_id))
+    conn.commit()
+    return True
+
+
+async def set_user_send_model_name(user_id):
+    check_user_account(user_id)
+    send_model_name = get_user_send_model_name(user_id)
+    send_model_name_db = 1 if send_model_name is False else 0
+    cursor.execute("UPDATE users SET send_model_name = ? WHERE user_id = ?", (send_model_name_db, user_id))
+    conn.commit()
+    return True
+
 
 def load_conversation_history(history_json):
     try:
@@ -39,9 +73,11 @@ def load_conversation_history(history_json):
     except FileNotFoundError:
         return []
 
+
 def save_conversation_history(history, history_json):
     with open(history_json, 'w') as file:
         json.dump(history, file, ensure_ascii=False, indent=4)
+
 
 def delete_folder(folder_path):
     try:

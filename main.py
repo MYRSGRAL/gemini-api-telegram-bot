@@ -260,7 +260,7 @@ async def handle_message(message: Message):
                         await bot.edit_message_text(chat_id=message.chat.id, message_id=msg.message_id,
                                                     text=response.text, reply_markup=message_keyboard,
                                                     parse_mode=ParseMode.MARKDOWN)
-                    if await set_user_send_model_name(user_id):
+                    if get_user_send_model_name(user_id) is True:
                         await message.answer(f"{model_name} сгенерировала ответ")
                     break
                 except Exception as e:

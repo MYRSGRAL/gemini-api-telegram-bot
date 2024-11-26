@@ -3,35 +3,34 @@ import os
 import PIL.Image
 import google.generativeai as genai
 from aiogram import Bot, Dispatcher, types
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ChatAction
+from aiogram.enums import ParseMode
 from aiogram.filters import Command
+from aiogram.filters.state import State, StatesGroup, StateFilter
+from aiogram.fsm.context import FSMContext
 from aiogram.types import ContentType
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.types import Message, callback_query
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
+from aiogram.types import Message
 from aiogram.utils.chat_action import ChatActionSender
-from aiogram.enums import ChatAction
 
-from config import (API_TOKEN, GOOGLE_API_KEY_list)
 from Handlers import (check_user_account, get_user_model, get_user_send_model_name, set_user_model,
-                      set_user_send_model_name, load_conversation_history, save_conversation_history, delete_folder)
+                      set_user_send_model_name, get_user_temperature, set_user_temperature,
+                      load_conversation_history, save_conversation_history, delete_folder, get_user_only_ru,
+                      set_user_only_ru)
+from config import (API_TOKEN, GOOGLE_API_KEY_list)
 
 bot = Bot(token=API_TOKEN)
 default = DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
 dp = Dispatcher()
 
+
+class Waitusertemperature(StatesGroup):
+    usr_temperature = State()
+
+
 if not os.path.exists('media'):
     os.makedirs('media')
-
-module_config = {
-    "temperature": 0.9,
-    "max_output_tokens": 4000
-}
-
-generation_config = {
-    "temperature": module_config.get("temperature", 0.9),
-    "max_output_tokens": module_config.get("max_output_tokens", 4000)
-}
 
 start_menu_text = "👋 Добро пожаловать! ✨\n\n🤖 Я — большая языковая модель, и у меня есть две версии: gemini-1.5-pro и gemini-1.5-flash.\n\n🧠 gemini-1.5-pro — для решения сложных задач, требующих глубокого анализа. 🤯\n⚡ gemini-1.5-flash — быстрая и эффективная версия для простых вопросов. 💨\n\n☝️  gemini-1.5-flash имеет больший лимит запросов. 😉\n\n🧹 Не забывайте очищать историю для начала нового диалога или при отправке большого сообщения. \n\n✨ Готов ответить на ваши вопросы! ✨"
 start_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -39,6 +38,29 @@ start_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
     [InlineKeyboardButton(text="💻 Настройки", callback_data="Settings_menu")]
 ])
+
+
+async def get_keyboard_for_settings_menu(user_id):
+    temperature_now = get_user_temperature(user_id)
+    settings_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
+        [InlineKeyboardButton(text=f"🌡️ Temperature ({temperature_now})", callback_data="Temperature_user")],
+    ])
+    if get_user_send_model_name(user_id):
+        send_m_n = InlineKeyboardButton(text="Название модели после ответа ✅", callback_data="user_send_model_name")
+    else:
+        send_m_n = InlineKeyboardButton(text="Название модели после ответа", callback_data="user_send_model_name")
+    if get_user_only_ru(user_id):
+        only_russian = InlineKeyboardButton(text="Только на русском ✅", callback_data="Only_russian")
+    else:
+        only_russian = InlineKeyboardButton(text="Только на русском", callback_data="Only_russian")
+    settings_menu_keyboard.inline_keyboard.append([send_m_n])
+    settings_menu_keyboard.inline_keyboard.append([only_russian])
+    settings_menu_keyboard.inline_keyboard.append(
+        [InlineKeyboardButton(text="⏩ На главную", callback_data="start_menu")])
+    return settings_menu_keyboard
+
+
 stop_generation = False
 
 
@@ -50,8 +72,9 @@ async def cmd_start(message: Message):
 
 @dp.callback_query(
     lambda c: c.data in ["Del_history", "Change_model", "Gemini-1.5-flash", "Gemini-1.5-pro", "break_generation",
-                         "user_send_model_name", "Settings_menu", "start_menu"])
-async def handle_button_click(callback_query: types.CallbackQuery):
+                         "user_send_model_name", "Settings_menu", "start_menu",
+                         "Temperature_user", "Gemini-1.5-flash-8b", "Only_russian"])
+async def handle_button_click(callback_query: types.CallbackQuery, state: FSMContext):
     global stop_generation
     callback_query_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
@@ -73,22 +96,16 @@ async def handle_button_click(callback_query: types.CallbackQuery):
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
                                         text="🧠 Gemini-1.5-pro", reply_markup=callback_query_keyboard)
+        case "Gemini-1.5-flash-8b":
+            await set_user_model(callback_query.from_user.id, "gemini-1.5-flash-8b")
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id,
+                                        message_id=callback_query.message.message_id,
+                                        text="⚡ Gemini-1.5-flash-8b", reply_markup=callback_query_keyboard)
         case "break_generation":
             stop_generation = True
         case "user_send_model_name":
             await set_user_send_model_name(callback_query.from_user.id)
-            user_send_model_name_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
-            ])
-            if get_user_send_model_name(callback_query.from_user.id):
-                send_m_n_q = InlineKeyboardButton(text="Название модели после ответа ✅",
-                                                  callback_data="user_send_model_name")
-            else:
-                send_m_n_q = InlineKeyboardButton(text="Название модели после ответа",
-                                                  callback_data="user_send_model_name")
-            user_send_model_name_keyboard.inline_keyboard.append([send_m_n_q])
-            user_send_model_name_keyboard.inline_keyboard.append(
-                [InlineKeyboardButton(text="⏩ На главную", callback_data="start_menu")])
+            user_send_model_name_keyboard = await get_keyboard_for_settings_menu(callback_query.from_user.id)
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
                                         text="💻 Настройки:", reply_markup=user_send_model_name_keyboard)
@@ -98,6 +115,33 @@ async def handle_button_click(callback_query: types.CallbackQuery):
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
                                         text=start_menu_text, reply_markup=start_menu_keyboard)
+        case "Temperature_user":
+            await state.set_state(Waitusertemperature.usr_temperature)
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id,
+                                        message_id=callback_query.message.message_id,
+                                        text="Напишите temperature от 0 до 2.0")
+        case "Only_russian":
+            await set_user_only_ru(callback_query.from_user.id)
+            user_send_model_name_keyboard = await get_keyboard_for_settings_menu(callback_query.from_user.id)
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id,
+                                        message_id=callback_query.message.message_id,
+                                        text="💻 Настройки:", reply_markup=user_send_model_name_keyboard)
+            await clear_history(callback_query.message)
+
+
+@dp.message(StateFilter(Waitusertemperature.usr_temperature))
+async def set_temperature(message: Message, state: FSMContext):
+    user_id = message.chat.id if message.chat.id is not None else message.from_user.id
+    try:
+        tempr = float(message.text)
+        if tempr < 0 or tempr > 2:
+            await message.answer("Введите значение от 0 до 2.0", reply_markup=start_menu_keyboard)
+        else:
+            await set_user_temperature(user_id, tempr)
+            await state.clear()
+            await settings_menu(message)
+    except:
+        await message.answer("Введите корректное значение температуры", reply_markup=start_menu_keyboard)
 
 
 @dp.message(Command("change_model"))
@@ -107,31 +151,30 @@ async def change_model(message: Message):
     change_model_keyboard = InlineKeyboardMarkup(inline_keyboard=[])
     if current_model == 'gemini-1.5-flash':
         change_model_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="⚡  Gemini-1.5-flash ✅", callback_data="Gemini-1.5-flash")],
-            [InlineKeyboardButton(text="🧠 Gemini-1.5-pro", callback_data="Gemini-1.5-pro")]
+            [InlineKeyboardButton(text="⚡ Gemini-1.5-flash ✅", callback_data="Gemini-1.5-flash")],
+            [InlineKeyboardButton(text="⚡ Gemini-1.5-flash-8b", callback_data="Gemini-1.5-flash-8b")],
+            [InlineKeyboardButton(text="🧠 Gemini-1.5-pro", callback_data="Gemini-1.5-pro")],
         ])
     elif current_model == 'gemini-1.5-pro':
         change_model_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🧠 Gemini-1.5-pro ✅ ", callback_data="Gemini-1.5-pro")],
-            [InlineKeyboardButton(text="⚡  Gemini-1.5-flash", callback_data="Gemini-1.5-flash")]
+            [InlineKeyboardButton(text="⚡ Gemini-1.5-flash", callback_data="Gemini-1.5-flash")],
+            [InlineKeyboardButton(text="⚡ Gemini-1.5-flash-8b", callback_data="gemini-1.5-flash-8b")],
+            [InlineKeyboardButton(text="🧠 Gemini-1.5-pro ✅ ", callback_data="Gemini-1.5-pro")]
         ])
+    elif current_model == 'gemini-1.5-flash-8b':
+        change_model_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="⚡ Gemini-1.5-flash", callback_data="Gemini-1.5-flash")],
+            [InlineKeyboardButton(text="⚡ Gemini-1.5-flash-8b ✅", callback_data="gemini-1.5-flash-8b")],
+            [InlineKeyboardButton(text="🧠 Gemini-1.5-pro", callback_data="Gemini-1.5-pro")]
+        ])
+
     await message.answer("Выберете модель ⚙️", reply_markup=change_model_keyboard)
 
 
 @dp.message(Command("settings_menu"))
 async def settings_menu(message: Message):
     user_id = message.chat.id if message.chat.id is not None else message.from_user.id
-    settings_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="⚙️ Изменить модель", callback_data="Change_model")],
-    ])
-    if get_user_send_model_name(user_id):
-        send_m_n = InlineKeyboardButton(text="Название модели после ответа ✅", callback_data="user_send_model_name")
-    else:
-        send_m_n = InlineKeyboardButton(text="Название модели после ответа", callback_data="user_send_model_name")
-
-    settings_menu_keyboard.inline_keyboard.append([send_m_n])
-    settings_menu_keyboard.inline_keyboard.append(
-        [InlineKeyboardButton(text="⏩ На главную", callback_data="start_menu")])
+    settings_menu_keyboard = await get_keyboard_for_settings_menu(user_id)
     await message.answer("💻 Настройки:", reply_markup=settings_menu_keyboard)
 
 
@@ -140,13 +183,20 @@ async def clear_history(message: types.Message):
     if message.chat.id is None:
         history_json = f'{message.from_user.id}.json'
         media_dir = f'media/{message.from_user.id}'
+        user_id = message.from_user.id
     else:
         history_json = f'{message.chat.id}.json'
         media_dir = f'media/{message.chat.id}'
-
-    with open(history_json, 'w') as file:
+        user_id = message.chat.id
+    prompt_json = f'prompt/ru.json'
+    with open(history_json, 'w', encoding='utf-8') as file:
         file.truncate(0)
     delete_folder(media_dir)
+    if get_user_only_ru(user_id) is True:
+        with open(prompt_json, 'r', encoding='utf-8') as file:
+            data = file.read()
+        with open(history_json, 'w', encoding='utf-8') as file:
+            file.write(data)
     await message.answer("🧹 История очищена")
 
 
@@ -158,7 +208,7 @@ async def handle_message(message: Message):
     ])
     msg = await message.answer("💬 Пожалуйста, подождите, идет обработка запроса", reply_markup=stop_generation_keyboard)
     async with ChatActionSender(action=ChatAction.TYPING, chat_id=message.chat.id, bot=bot):
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0.10)
         message_keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🧹 Очистить историю", callback_data="Del_history")],
             [InlineKeyboardButton(text="💻 Настройки", callback_data="Settings_menu")],
@@ -175,7 +225,7 @@ async def handle_message(message: Message):
                     genai.configure(api_key=GOOGLE_API)
                     history_json = f'{message.chat.id}.json'
                     if not os.path.exists(history_json):
-                        open(history_json, 'w').close()
+                        open(history_json, 'w', encoding='utf-8').close()
                     conversation_history = load_conversation_history(history_json)
                     if message.content_type == ContentType.TEXT:
                         text = message.text
@@ -238,8 +288,13 @@ async def handle_message(message: Message):
                         await bot.download_file(file_path, file_name)
                         upload_file_s = genai.upload_file(file_name)
                         conversation_history.append({"role": "user", "parts": [{"text": text}]})
-
                     user_id = message.from_user.id
+
+                    generation_config = {
+                        "temperature": get_user_temperature(user_id),
+                        "max_output_tokens": 4000,
+                    }
+
                     model_name = get_user_model(user_id)
                     model = genai.GenerativeModel(
                         model_name=model_name,

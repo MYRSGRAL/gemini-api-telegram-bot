@@ -44,4 +44,4 @@ MIT License
 
 * **[MYRSGRAL](https://github.com/MYRSGRAL)** - основной разработчик.  Разработка основной логики бота, интеграция с API Gemini.
 * **[Mikhail Khokhlov](https://github.com/Git-Mik)** - помощник разработчика.  Вклад в разработку форматирования текста и бета-тестирования.
-
+* **[Skysmart-Answers](https://github.com/xartd0/Skysmart-Answers)** - источник части кода для работы со skysmart-answers.

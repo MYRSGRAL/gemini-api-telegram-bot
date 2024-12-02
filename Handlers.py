@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import google.generativeai as genai
 
 from config import DEFAULT_MODEL, Default_send_model_name, Default_temperature_user, Default_only_ru
 
@@ -120,3 +121,14 @@ def delete_folder(folder_path):
         os.rmdir(folder_path)
     except Exception:
         pass
+
+async def download_and_upload_file(bot, file_id, file_type, user_id, file_name):
+    file_info = await bot.get_file(file_id)
+    file_path = file_info.file_path
+    media_dir = f'media/{user_id}'
+    if not os.path.exists(media_dir):
+        os.makedirs(media_dir)
+    file_name = f'{media_dir}/{file_name}'
+    await bot.download_file(file_path, file_name)
+    uploaded_file = genai.upload_file(file_name)
+    return uploaded_file

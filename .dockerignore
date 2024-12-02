@@ -1,7 +1,7 @@
 /.venv
-/.git
-/.idea
-/assets
-LICENSE
 README.md
-
+/.git
+/__pycache__
+/.idea
+/media
+/skysmart/__pycache__

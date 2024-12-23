@@ -191,7 +191,7 @@ async def change_model(message: Message):
         [InlineKeyboardButton(text=f"🧠 Gemini-1.5-pro {'✅' if current_model == 'gemini-1.5-pro' else ''}",
                               callback_data="Gemini-1.5-pro")],
         [InlineKeyboardButton(text=f"🧠 Gemini-2.0-pro Beta {'✅' if current_model == 'gemini-exp-1206' else ''}",
-                              callback_data="Gemini-2.0-flash-thinking-exp-1219")],
+                              callback_data="Gemini-exp-1206")],
     ])
 
     await message.answer("Выберете модель ⚙️", reply_markup=change_model_keyboard)

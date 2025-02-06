@@ -79,8 +79,9 @@ async def cmd_start(message: Message):
 @dp.callback_query(
     lambda c: c.data in ["Del_history", "Change_model", "Gemini-1.5-flash", "Gemini-1.5-pro", "break_generation",
                          "user_send_model_name", "Settings_menu", "start_menu",
-                         "Temperature_user", "Gemini-1.5-flash-8b", "Only_russian", "Gemini-2.0-flash-exp",
-                         "Parse_mode", "Gemini-exp-1206", "Gemini-2.0-flash-thinking-exp-1219"])
+                         "Temperature_user", "gemini-2.0-flash-lite-preview-02-05", "Only_russian",
+                         "Gemini-2.0-flash-exp",
+                         "Parse_mode", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash-thinking-exp-01-21"])
 async def handle_button_click(callback_query: types.CallbackQuery, state: FSMContext):
     global stop_generation
     callback_query_keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -103,23 +104,23 @@ async def handle_button_click(callback_query: types.CallbackQuery, state: FSMCon
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
                                         text="🧠 Gemini-1.5-pro", reply_markup=callback_query_keyboard)
-        case "Gemini-1.5-flash-8b":
-            await set_user_model(callback_query.from_user.id, "gemini-1.5-flash-8b")
+        case "gemini-2.0-flash-lite-preview-02-05":
+            await set_user_model(callback_query.from_user.id, "gemini-2.0-flash-lite-preview-02-05")
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
-                                        text="⚡ Gemini-1.5-flash-8b", reply_markup=callback_query_keyboard)
+                                        text="⚡ Gemini-2.0 flash lite Beta", reply_markup=callback_query_keyboard)
         case "Gemini-2.0-flash-exp":
             await set_user_model(callback_query.from_user.id, "gemini-2.0-flash-exp")
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
                                         text="⚡ Gemini-2.0-flash Beta", reply_markup=callback_query_keyboard)
-        case "Gemini-exp-1206":
-            await set_user_model(callback_query.from_user.id, "gemini-exp-1206")
+        case "gemini-2.0-pro-exp-02-05":
+            await set_user_model(callback_query.from_user.id, "gemini-2.0-pro-exp-02-05")
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
                                         text="🧠 Gemini-2.0-pro Beta", reply_markup=callback_query_keyboard)
-        case "Gemini-2.0-flash-thinking-exp-1219":
-            await set_user_model(callback_query.from_user.id, "gemini-2.0-flash-thinking-exp-1219")
+        case "gemini-2.0-flash-thinking-exp-01-21":
+            await set_user_model(callback_query.from_user.id, "gemini-2.0-flash-thinking-exp-01-21")
             await bot.edit_message_text(chat_id=callback_query.message.chat.id,
                                         message_id=callback_query.message.message_id,
                                         text="⚡ Gemini-2.0-flash thinking Beta", reply_markup=callback_query_keyboard)
@@ -181,17 +182,19 @@ async def change_model(message: Message):
     change_model_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=f"⚡ Gemini-1.5-flash {'✅' if current_model == 'gemini-1.5-flash' else ''}",
                               callback_data="Gemini-1.5-flash")],
-        [InlineKeyboardButton(text=f"⚡ Gemini-1.5-flash-8b {'✅' if current_model == 'gemini-1.5-flash-8b' else ''}",
-                              callback_data="Gemini-1.5-flash-8b")],
+        [InlineKeyboardButton(
+            text=f"⚡ Gemini-2.0 flash lite Beta {'✅' if current_model == 'gemini-2.0-flash-lite-preview-02-05' else ''}",
+            callback_data="gemini-2.0-flash-lite-preview-02-05")],
         [InlineKeyboardButton(text=f"⚡ Gemini-2.0-flash Beta {'✅' if current_model == 'gemini-2.0-flash-exp' else ''}",
                               callback_data="Gemini-2.0-flash-exp")],
         [InlineKeyboardButton(
-            text=f"⚡ Gemini-2.0-flash thinking Beta {'✅' if current_model == 'gemini-2.0-flash-thinking-exp-1219' else ''}",
-            callback_data="Gemini-2.0-flash-thinking-exp-1219")],
+            text=f"⚡ Gemini-2.0-flash thinking Beta {'✅' if current_model == 'gemini-2.0-flash-thinking-exp-01-21' else ''}",
+            callback_data="gemini-2.0-flash-thinking-exp-01-21")],
         [InlineKeyboardButton(text=f"🧠 Gemini-1.5-pro {'✅' if current_model == 'gemini-1.5-pro' else ''}",
                               callback_data="Gemini-1.5-pro")],
-        [InlineKeyboardButton(text=f"🧠 Gemini-2.0-pro Beta {'✅' if current_model == 'gemini-exp-1206' else ''}",
-                              callback_data="Gemini-exp-1206")],
+        [InlineKeyboardButton(
+            text=f"🧠 Gemini-2.0-pro Beta {'✅' if current_model == 'gemini-2.0-pro-exp-02-05' else ''}",
+            callback_data="gemini-2.0-pro-exp-02-05")],
     ])
 
     await message.answer("Выберете модель ⚙️", reply_markup=change_model_keyboard)

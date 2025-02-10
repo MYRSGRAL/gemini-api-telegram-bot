@@ -9,3 +9,4 @@ Default_send_model_name = False  # Stable variable that cannot be changed
 Default_send_as_photo = False  # Stable variable that cannot be changed
 Default_temperature_user = 0.9  # Default temperature to use
 Default_only_ru = False  # Stable variable that cannot be changed
+Default_parse_mode = True  # Stable variable that cannot be changed

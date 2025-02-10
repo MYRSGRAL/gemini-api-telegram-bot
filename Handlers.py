@@ -135,7 +135,7 @@ def delete_folder(folder_path):
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
         os.rmdir(folder_path)
-    except Exception:
+    except:
         pass
 
 async def download_and_upload_file(bot, file_id, file_type, user_id, file_name):

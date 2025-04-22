@@ -43,4 +43,3 @@ MIT License
 ## Авторы
 
 * **[MYRSGRAL](https://github.com/MYRSGRAL)** - основной разработчик.  Разработка основной логики бота, интеграция с API Gemini.
-* **[Mikhail Khokhlov](https://github.com/Git-Mik)** - помощник разработчика.  Вклад в разработку форматирования текста и бета-тестирования.

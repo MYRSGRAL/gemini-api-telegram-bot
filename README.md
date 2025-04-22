@@ -39,7 +39,3 @@
 ## Лицензия
 
 MIT License
-
-## Авторы
-
-* **[MYRSGRAL](https://github.com/MYRSGRAL)** - основной разработчик.  Разработка основной логики бота, интеграция с API Gemini.
